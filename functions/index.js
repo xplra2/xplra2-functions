@@ -17,10 +17,10 @@ const twilioNumber = '+17344283577'; // your twilio phone number
 
 exports.textStatus = functions.database
        .ref('/orders/{orderKey}/status')
-       .onUpdate(event => {
+       .onUpdate((change,context) => {
 
 
-    const orderKey = event.params.orderKey
+    const orderKey = context.params.orderKey
 
     return admin.database()
                 .ref(`/orders/${orderKey}`)
