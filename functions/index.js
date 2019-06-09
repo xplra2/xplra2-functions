@@ -15,20 +15,25 @@ const twilioNumber = '+17344283577'; // your twilio phone number
 
 /// start cloud function
 
-exports.textStatus = functions.database
-       .ref('/orders/{orderKey}/status')
+exports.textStatus = functions.firestore
+       .document('/orders/{orderId}')
        .onUpdate((change,context) => {
 
 
-    const orderKey = context.params.orderKey
+    const orderKey = context.params.orderId;
+    console.log('textStatus', orderKey);
 
-    return admin.database()
-                .ref(`/orders/${orderKey}`)
-                .once('value')
-                .then(snapshot => snapshot.val())
+
+    return admin.firestore()
+                .collection('orders')
+                .doc(orderKey)
+                .get()
                 .then(order => {
-                    const status      = order.status
-                    const phoneNumber = order.phoneNumber
+                    const status      = order.data().status;
+                    const phoneNumber = order.data().phoneNumber;
+
+				    console.log('status', status);
+				    console.log('phoneNumber', phoneNumber);
 
                     if ( !validE164(phoneNumber) ) {
                         throw new Error('number must be E164 format!')
