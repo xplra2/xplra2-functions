@@ -16,38 +16,58 @@ const twilioNumber = '+17344283577'; // your twilio phone number
 /// start cloud function
 
 exports.textStatus = functions.firestore
-       .document('/orders/{orderId}')
+       .document('/streetpark/{streetparkId}')
        .onUpdate((change,context) => {
 
 
-    const orderKey = context.params.orderId;
+    const orderKey = context.params.streetparkId;
+    const before = change.before;
+    const after = change.after;
     console.log('textStatus', orderKey);
 
 
     return admin.firestore()
-                .collection('orders')
+                .collection('streetpark')
                 .doc(orderKey)
                 .get()
                 .then(order => {
-                    const status      = order.data().status;
-                    const phoneNumber = order.data().phoneNumber;
+                    const oldStatus   = before.data().Expired;
+                    const newStatus   = order.data().Expired;
+                    const phoneNumber = order.data().PhoneNumber;
+                    const spotNumber  = order.data().Number;
 
-				    console.log('status', status);
+				    console.log('oldStatus', oldStatus);
+				    console.log('newStatus', newStatus);
 				    console.log('phoneNumber', phoneNumber);
+				    console.log('spotNumber', spotNumber);
 
                     if ( !validE164(phoneNumber) ) {
                         throw new Error('number must be E164 format!')
                     }
 
-                    const textMessage = {
-                        body: `Current order status: ${status}`,
-                        to: phoneNumber,  // Text to this number
-                        from: twilioNumber // From a valid Twilio number
-                    }
+                    if (!oldStatus && newStatus) {
 
-                    return client.messages.create(textMessage)
+					    console.log('expired!', spotNumber);
+
+	                    const textMessage = {
+	                        body: `Your parking spot ${spotNumber} has expired!`,
+	                        to: phoneNumber,  // Text to this number
+	                        from: twilioNumber // From a valid Twilio number
+	                    }
+
+	                    return client.messages.create(textMessage)
+
+                    }
                 })
-                .then(message => console.log(message.sid, 'success'))
+                .then(message => {
+
+					if (typeof message === "undefined") {
+	                	console.log('success - no message sent');
+					} else {
+	                	console.log(message.sid, 'success - message sent');
+					}
+
+                })
                 .catch(err => console.log(err))
 
 
